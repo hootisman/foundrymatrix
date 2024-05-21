@@ -6,12 +6,14 @@ import termios
 import os
 
 #sys.path.append(os.path.abspath(os.path.dirname(__file__) + '/..'))
-from rgbmatrix import RGBMatrix, RGBMatrixOptions
+from rgbmatrix import RGBMatrix, RGBMatrixOptions, graphics
 
 
 
 class MatrixBase(object):
     def __init__(self, *args, **kwargs):
+        #parser init
+
         self.parser = argparse.ArgumentParser()
 
         self.parser.add_argument("-r", "--led-rows", action="store", help="Display rows. 16 for 16x32, 32 for 32x32. Default: 32", default=64, type=int)
@@ -34,6 +36,10 @@ class MatrixBase(object):
         self.parser.add_argument("--led-no-drop-privs", dest="drop_privileges", help="Don't drop privileges from 'root' after initializing the hardware.", action='store_false')
         self.parser.set_defaults(drop_privileges=True)
 
+    # Drawing Functions
+    def DrawLine(self, x1, y1, x2, y2, color):
+        graphics.DrawLine(self.matrix, x1, y1 ,x2, y2, color)
+
     def usleep(self, value):
         time.sleep(value / 1000000.0)
 
@@ -51,6 +57,10 @@ class MatrixBase(object):
         finally:
             termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
         return ch
+    
+    def clear_screen(self):
+        self.canvas = self.matrix.SwapOnVSync(self.canvas)
+        self.matrix.Clear()
 
     def process(self):
         self.args = self.parser.parse_args()
@@ -87,6 +97,7 @@ class MatrixBase(object):
 
         try:
             # Start loop
+            self.canvas = self.matrix.CreateFrameCanvas()
             self.run()
         except KeyboardInterrupt:
             print("Exiting\n")
